@@ -25,14 +25,14 @@ def create_connection(db_file):
 
 def select_all_tiles(conn, tms, databaseName):
     cur = conn.cursor()
-    cur.execute("SELECT * FROM map")
+    cur.execute("SELECT * FROM tiles")
 
     rows = cur.fetchall()
     assets = {}
     print("Map count: " + str(len(rows)))
     print("TMS: " + str(tms))
     for row in rows:
-        image = get_image(conn, row[3])
+        # print(row)
 
         # for printing
         dir = str(row[0]) + "/" + str(row[1])
@@ -41,27 +41,30 @@ def select_all_tiles(conn, tms, databaseName):
         # tsm check
         yValue = row[2]
         if(tms):
-            ymax = 1 << row[0]
+            ymax = 1 << row[1]
             yValue = ymax - row[2] - 1
+        
+        image = get_image(conn, row[0], row[1], row[2])
 
         # generate png
         blob_to_file(
             databaseName,
             str(row[0]),  # {z}
             str(row[1]),  # {x}
-            str(yValue),  # {y}
+            str(row[2]),  # {y}
             image,  # data
         )
     for asset in assets:
         print ('- assets/map/' + databaseName + '/' + assets[asset] + "/")
 
 
-def get_image(conn, id):
+def get_image(conn, z, x, y):
     cur = conn.cursor()
-    cur.execute("SELECT * FROM images WHERE tile_id = ?", [id])
+    print(z, y, x)
+    cur.execute("SELECT * FROM tiles WHERE zoom_level = ? AND tile_column = ? AND tile_row = ?", [z, x, y])
 
     row = cur.fetchone()
-    return(row[0])
+    return(row[3])
 
 
 def mkdir_p(path):
